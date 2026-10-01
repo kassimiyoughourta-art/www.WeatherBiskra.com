@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Weather Biskra | Automatic Weather Station</title>
+<meta name="description" content="Live temperature, humidity, pressure, rain, UV and wind readings from the Weather Biskra automatic weather station.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+:root{
+  box-sizing:border-box;
+  --bg:#f1f4f8;--panel:#fff;--ink:#14202e;--muted:#5b6b7b;--line:#dbe3ea;
+  --brand:#0e2a47;--brand-ink:#fff;--accent:#0b7285;--heat:#c8434f;--rain:#3d5a9e;--sun:#c98a12;--good:#2b8a5b;--warn:#c9861a;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0c1620;--panel:#142230;--ink:#e6eef5;--muted:#93a6b6;--line:#26394a;
+  --brand:#08121c;--accent:#4fc3d6;--heat:#ef7a83;--rain:#8ea8e8;--sun:#e8b44a;--good:#5cc98e;--warn:#e8b44a}}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--body)}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 18px}
+.top{background:var(--brand);color:var(--brand-ink);position:sticky;top:0;z-index:5;padding-top:env(safe-area-inset-top,0px)}
+.top .wrap{display:flex;align-items:center;gap:18px;min-height:58px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:auto}
+.brand b{font:700 24px/1 var(--display);letter-spacing:.02em}
+.brand small{display:block;font-size:12px;opacity:.75;line-height:1.1}
+nav{display:flex;gap:18px;font-size:15px}
+nav a{text-decoration:none;opacity:.85;padding:6px 0;border-bottom:2px solid transparent}
+nav a:hover,nav a:focus-visible{opacity:1;border-color:currentColor;outline:none}
+.pill{font-size:13px;padding:3px 10px;border-radius:99px;border:1px solid rgba(255,255,255,.35)}
+.pill i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--good);margin-right:6px}
+.pill.demo i{background:var(--warn)}
+main{padding:24px 0 8px}
+section{margin-bottom:26px}
+h2{font:600 26px/1.1 var(--display);margin:0 0 12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px}
+.now{display:grid;grid-template-columns:1.1fr 1fr;gap:18px}
+@media (max-width:760px){.now{grid-template-columns:1fr}}
+.temp{font:700 clamp(88px,15vw,132px)/.9 var(--display)}
+.temp small{font-size:.38em;color:var(--muted);font-weight:500;margin-left:4px}
+.cond{font:500 24px var(--display);margin:6px 0 10px}
+.sub{color:var(--muted);display:flex;gap:8px 22px;flex-wrap:wrap}.sub b{color:var(--ink);font-weight:600}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.kpi .l{color:var(--muted);font-size:14px}
+.kpi .v{font:700 34px/1.1 var(--display)}.kpi .v span{font-size:16px;color:var(--muted);font-weight:500;margin-left:3px}
+.kpi .n{font-size:13px;color:var(--muted)}
+.bar{height:5px;background:var(--line);border-radius:3px;margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--c,var(--accent));width:0;transition:width 1s}
+.wind{display:grid;grid-template-columns:minmax(200px,260px) 1fr;gap:24px;align-items:center}
+@media (max-width:620px){.wind{grid-template-columns:1fr}}
+.dial{width:100%;max-width:260px;margin:0 auto;display:block}
+.dial .ring{fill:var(--panel);stroke:var(--brand);stroke-width:2}
+.dial text{fill:var(--ink);font:600 18px var(--display);text-anchor:middle;dominant-baseline:middle}
+.dial .tick{stroke:var(--muted);stroke-width:1.5}
+#needle{transform-origin:150px 150px;transition:transform 1.4s cubic-bezier(.3,1.3,.5,1)}
+.ws{font:700 clamp(60px,10vw,90px)/1 var(--display)}.ws small{font-size:.3em;color:var(--muted);font-weight:500;margin-left:6px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tabs button{font:500 15px var(--body);padding:6px 14px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#chart{width:100%;height:auto;display:block}#chart text{fill:var(--muted);font:12px var(--body)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:500;font-size:14px}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;color:var(--muted)}
+.flow span{border:1px solid var(--line);border-radius:6px;padding:4px 10px;color:var(--ink);background:var(--panel)}
+footer{background:var(--brand);color:var(--brand-ink);padding:22px 0 calc(22px + env(safe-area-inset-bottom,0px));font-size:14px;opacity:.95}
+footer .wrap{display:flex;flex-wrap:wrap;gap:8px 30px;justify-content:space-between}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="#now" aria-label="Weather Biskra home">
+    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15" fill="none" stroke="currentColor" stroke-width="2"/><path d="M17 5v8M17 21v8M5 17h8M21 17h8" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="17" r="3.5" fill="currentColor"/></svg>
+    <span><b>Weather Biskra</b><small>Automatic weather station</small></span>
+  </a>
+  <nav aria-label="Sections"><a href="#now">Now</a><a href="#wind">Wind</a><a href="#trends">Trends</a><a href="#station">Station</a></nav>
+  <span class="pill demo" id="status"><i></i><span id="statusTxt">Demo data</span></span>
+</div></header>
+
+<main class="wrap">
+<section id="now" aria-label="Current conditions">
+  <div class="now">
+    <div class="card">
+      <div class="temp"><span id="t">--</span><small>&deg;C</small></div>
+      <div class="cond" id="cond">Loading</div>
+      <div class="sub"><span>High <b id="hi">--</b></span><span>Low <b id="lo">--</b></span><span>Updated <b id="upd">--</b></span></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="l">Humidity</div><div class="v" id="hum">--<span>%</span></div><div class="bar"><i id="humb" style="--c:var(--rain)"></i></div></div>
+      <div class="kpi"><div class="l">Pressure</div><div class="v" id="pres">--<span>hPa</span></div><div class="n" id="ptrend">&nbsp;</div></div>
+      <div class="kpi"><div class="l">Rain today</div><div class="v" id="rain">--<span>mm</span></div><div class="bar"><i id="rainb" style="--c:var(--rain)"></i></div></div>
+      <div class="kpi"><div class="l">UV index</div><div class="v" id="uv">--</div><div class="n" id="uvc">&nbsp;</div><div class="bar"><i id="uvb" style="--c:var(--sun)"></i></div></div>
+      <div class="kpi" style="grid-column:1/-1"><div class="l">Dew point</div><div class="v" id="dew">--<span>&deg;C</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="wind" aria-label="Wind"><div class="card wind">
+  <svg class="dial" viewBox="0 0 300 300" role="img" aria-label="Wind direction compass">
+    <circle class="ring" cx="150" cy="150" r="140"/><g id="ticks"></g>
+    <text x="150" y="34">N</text><text x="266" y="150">E</text><text x="150" y="266">S</text><text x="34" y="150">W</text>
+    <g id="needle"><polygon points="150,62 162,150 138,150" fill="var(--accent)"/><polygon points="150,238 162,150 138,150" fill="var(--line)"/></g>
+    <circle cx="150" cy="150" r="7" fill="var(--brand)"/>
+  </svg>
+  <div>
+    <h2>Wind</h2>
+    <div class="ws"><span id="wind">--</span><small>km/h</small></div>
+    <div class="sub"><span>From <b id="dir">--</b></span><span>Gusts <b id="gust">--</b> km/h</span></div>
+  </div>
+</div></section>
+
+<section id="trends" aria-label="Last 24 hours">
+  <h2>Last 24 hours</h2>
+  <div class="card">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <svg id="chart" viewBox="0 0 800 270" role="img" aria-label="24-hour trend chart"></svg>
+  </div>
+</section>
+
+<section id="station" aria-label="About the station">
+  <h2>The station</h2>
+  <div class="card">
+    <p class="flow"><span>Sensors</span>&rarr;<span>ESP32 board</span>&rarr;<span>GSM network</span>&rarr;<span>Server</span>&rarr;<span>This page</span></p>
+    <table>
+      <thead><tr><th>Measurement</th><th>Unit</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Air temperature</td><td>&deg;C</td><td>Daily high and low from the last 24 hours</td></tr>
+        <tr><td>Relative humidity</td><td>%</td><td></td></tr>
+        <tr><td>Atmospheric pressure</td><td>hPa</td><td>Trend compared with 3 hours earlier</td></tr>
+        <tr><td>Rainfall</td><td>mm</td><td>Accumulated since midnight</td></tr>
+        <tr><td>UV index</td><td>0&ndash;11+</td><td>Categories follow the WHO scale</td></tr>
+        <tr><td>Wind speed and direction</td><td>km/h, &deg;</td><td>Direction is where the wind blows from</td></tr>
+        <tr><td>Dew point</td><td>&deg;C</td><td>Calculated from temperature and humidity</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap">
+  <span>Weather Biskra &middot; Biskra, Algeria</span>
+  <span id="note">Showing simulated demo data. Connect the station feed to show live readings.</span>
+</div></footer>
+
+<script>
+(function(){
+  // ---- Configuration: change API to the URL your station data is served from ----
+  var CONFIG={API:"/api/latest",REFRESH_MS:60000};
+  /* Expected JSON: {time:"ISO", temperature, humidity, pressure, rain_today, uv, wind_speed, wind_gust, wind_dir,
+     history:[{time:"ISO", temperature, humidity, pressure, wind_speed}, ... 24 hourly points]} */
+
+  var $=function(i){return document.getElementById(i)};
+  var DIRS=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  var SERIES={temperature:["Temperature","\u00b0C","--heat"],humidity:["Humidity","%","--rain"],pressure:["Pressure","hPa","--accent"],wind_speed:["Wind speed","km/h","--accent"]};
+  var state={data:null,key:"temperature"};
+
+  function demo(){
+    var seed=11;function rnd(){seed=(seed*9301+49297)%233280;return seed/233280}
+    var now=new Date(),H=now.getHours(),hist=[];
+    for(var i=23;i>=0;i--){var h=(H-i+24)%24,t=26+9*Math.sin((h-9)/24*2*Math.PI)+(rnd()-.5);
+      hist.push({time:new Date(now-i*36e5).toISOString(),temperature:+t.toFixed(1),humidity:Math.round(Math.max(12,55-(t-20)*1.8)),
+        pressure:+(1014+1.5*Math.sin((23-i)/6)).toFixed(1),wind_speed:Math.round(10+7*Math.sin(h/24*2*Math.PI)+rnd()*4)})}
+    var c=hist[23];
+    return{demo:true,time:now.toISOString(),temperature:c.temperature,humidity:c.humidity,pressure:c.pressure,
+      rain_today:0.4,uv:(H>=7&&H<=18)?Math.round(9*Math.sin((H-7)/11*Math.PI)):0,
+      wind_speed:c.wind_speed,wind_gust:c.wind_speed+9,wind_dir:238,history:hist};
+  }
+  function load(){
+    var ctl=new AbortController(),to=setTimeout(function(){ctl.abort()},6000);
+    return fetch(CONFIG.API,{signal:ctl.signal,cache:"no-store"}).then(function(r){
+      clearTimeout(to);if(!r.ok)throw 0;return r.json()}).then(function(d){d.demo=false;return d})
+      .catch(function(){clearTimeout(to);return demo()});
+  }
+  function dewPoint(t,h){var a=17.62,b=243.12,g=Math.log(h/100)+a*t/(b+t);return +(b*g/(a-g)).toFixed(1)}
+  function uvCat(u){return u<3?["Low",""]:u<6?["Moderate",""]:u<8?["High",""]:u<11?["Very high",""]:["Extreme",""]}
+
+  function render(d){
+    state.data=d;
+    var h=d.history||[],temps=h.map(function(p){return p.temperature}).concat([d.temperature]);
+    $("t").textContent=Math.round(d.temperature);
+    $("hi").textContent=Math.max.apply(null,temps).toFixed(1)+"\u00b0";
+    $("lo").textContent=Math.min.apply(null,temps).toFixed(1)+"\u00b0";
+    $("upd").textContent=new Date(d.time).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+    $("cond").textContent=d.rain_today>0.2?"Rain recorded today":(d.uv>=6?"Sunny and hot":(d.uv>0?"Clear":"Clear night"));
+    $("hum").firstChild.nodeValue=Math.round(d.humidity);$("humb").style.width=d.humidity+"%";
+    $("pres").firstChild.nodeValue=d.pressure;
+    if(h.length>3){var df=d.pressure-h[h.length-4].pressure;$("ptrend").textContent=Math.abs(df)<1?"Steady":(df>0?"Rising":"Falling")}
+    $("rain").firstChild.nodeValue=d.rain_today;$("rainb").style.width=Math.min(100,d.rain_today*10)+"%";
+    $("uv").textContent=d.uv;$("uvc").textContent=uvCat(d.uv)[0];$("uvb").style.width=Math.min(100,d.uv*9)+"%";
+    $("dew").firstChild.nodeValue=dewPoint(d.temperature,d.humidity);
+    $("wind").textContent=Math.round(d.wind_speed);$("gust").textContent=Math.round(d.wind_gust);
+    $("dir").textContent=DIRS[Math.round(d.wind_dir/22.5)%16]+" ("+Math.round(d.wind_dir)+"\u00b0)";
+    $("needle").style.transform="rotate("+d.wind_dir+"deg)";
+    var st=$("status");st.className="pill"+(d.demo?" demo":"");$("statusTxt").textContent=d.demo?"Demo data":"Live";
+    $("note").textContent=d.demo?"Showing simulated demo data. Connect the station feed to show live readings.":"Data from the Weather Biskra station, refreshed every minute.";
+    chart();
+  }
+  function chart(){
+    var d=state.data,k=state.key,s=SERIES[k],col="var("+s[2]+")",h=d.history||[];
+    if(!h.length){$("chart").innerHTML="";return}
+    var v=h.map(function(p){return p[k]}),lo=Math.min.apply(null,v),hi=Math.max.apply(null,v),pad=(hi-lo)*.15||1;
+    var mn=lo-pad,mx=hi+pad,W=800,Ht=270,L=48,R=12,T=14,B=30,n=h.length;
+    function X(i){return L+i*(W-L-R)/(n-1)}function Y(x){return T+(mx-x)*(Ht-T-B)/(mx-mn)}
+    var o="";
+    for(var j=0;j<=4;j++){var val=mn+(mx-mn)*j/4;o+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(val)+'" y2="'+Y(val)+'" stroke="var(--line)"/><text x="'+(L-8)+'" y="'+(Y(val)+4)+'" text-anchor="end">'+val.toFixed(k==="pressure"?1:0)+'</text>'}
+    var p=v.map(function(x,i){return(i?"L":"M")+X(i).toFixed(1)+" "+Y(x).toFixed(1)}).join(" ");
+    o+='<path d="'+p+' L'+X(n-1)+' '+(Ht-B)+' L'+X(0)+' '+(Ht-B)+'Z" fill="'+col+'" opacity=".12"/><path d="'+p+'" fill="none" stroke="'+col+'" stroke-width="3" stroke-linejoin="round"/>';
+    h.forEach(function(q,i){if((n-1-i)%4===0){var hh=new Date(q.time).getHours();o+='<text x="'+X(i)+'" y="'+(Ht-8)+'" text-anchor="middle">'+(hh<10?"0":"")+hh+':00</text>'}});
+    o+='<circle cx="'+X(n-1)+'" cy="'+Y(v[n-1])+'" r="6" fill="'+col+'" stroke="var(--panel)" stroke-width="2"/>';
+    $("chart").innerHTML=o;$("chart").setAttribute("aria-label",s[0]+" over the last 24 hours, in "+s[1]);
+  }
+  // tabs
+  var tb=$("tabs");Object.keys(SERIES).forEach(function(k){var b=document.createElement("button");
+    b.type="button";b.setAttribute("role","tab");b.textContent=SERIES[k][0]+" ("+SERIES[k][1]+")";b.setAttribute("aria-selected",k===state.key);
+    b.onclick=function(){state.key=k;[].forEach.call(tb.children,function(c){c.setAttribute("aria-selected",c===b)});chart()};tb.appendChild(b)});
+  // compass ticks
+  var tk="";for(var a=0;a<360;a+=10){var r=a*Math.PI/180,l=a%90===0?0:(a%30===0?10:6);
+    tk+='<line class="tick" x1="'+(150+(128-l)*Math.sin(r))+'" y1="'+(150-(128-l)*Math.cos(r))+'" x2="'+(150+136*Math.sin(r))+'" y2="'+(150-136*Math.cos(r))+'"/>'}
+  $("ticks").innerHTML=tk;
+  function tick(){load().then(render)}
+  tick();setInterval(tick,CONFIG.REFRESH_MS);
+})();
+</script>
+</body>
+</html>
